@@ -32,6 +32,10 @@ const taskSchema = new mongoose.Schema(
             enum: ["low", "medium", "high"],
             default: "medium",
         },
+        attachment: {
+            type: String,
+            default: "",
+        },
 
         dueDate: {
             type: Date,

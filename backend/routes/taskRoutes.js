@@ -6,13 +6,16 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const roleMiddleware = require("../middleware/roleMiddleware");
 
+const upload = require("../middleware/uploadMiddleware");
+
 const router = express.Router();
 
-// Create Task - Admin Only
+// Create Task - Admin Only with File Upload
 router.post(
     "/",
     authMiddleware,
     roleMiddleware("admin"),
+    upload.single("attachment"),
     async (req, res) => {
         try {
             const {
@@ -24,7 +27,7 @@ router.post(
                 assignedTo,
             } = req.body;
 
-            if (title.length < 3) {
+            if (!title || title.length < 3) {
                 return res.status(400).json({
                     message: "Task title must be at least 3 characters",
                 });
@@ -43,8 +46,10 @@ router.post(
                 priority,
                 dueDate,
                 assignedTo,
+                attachment: req.file ? req.file.filename : "",
                 createdBy: req.user.id,
             });
+
             res.status(201).json({
                 message: "Task created successfully",
                 task,
@@ -108,7 +113,15 @@ router.delete(
     roleMiddleware("admin"),
     async (req, res) => {
         try {
-            await Task.findByIdAndDelete(req.params.id);
+            const task = await Task.findById(req.params.id);
+
+            if (!task) {
+                return res.status(404).json({
+                    message: "Task not found",
+                });
+            }
+
+            await task.deleteOne();
 
             res.json({
                 message: "Task deleted successfully",

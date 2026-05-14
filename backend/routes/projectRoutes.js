@@ -11,12 +11,13 @@ router.post("/", authMiddleware, roleMiddleware("admin"), async (req, res) => {
         const { title, description, members } = req.body;
 
         if (!title) {
-            if (title.length < 3) {
-                return res.status(400).json({
-                    message: "Project title must be at least 3 characters",
-                });
-            }
             return res.status(400).json({ message: "Project title is required" });
+        }
+
+        if (title.length < 3) {
+            return res.status(400).json({
+                message: "Project title must be at least 3 characters",
+            });
         }
 
         const project = await Project.create({
@@ -51,7 +52,13 @@ router.get("/", authMiddleware, async (req, res) => {
 // Delete project - Admin only
 router.delete("/:id", authMiddleware, roleMiddleware("admin"), async (req, res) => {
     try {
-        await Project.findByIdAndDelete(req.params.id);
+        const project = await Project.findById(req.params.id);
+
+        if (!project) {
+            return res.status(404).json({ message: "Project not found" });
+        }
+
+        await project.deleteOne();
 
         res.json({ message: "Project deleted successfully" });
     } catch (error) {
